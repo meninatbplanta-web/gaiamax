@@ -1,9 +1,13 @@
 import Link from "next/link";
+import { getPublishedCourses } from "@/lib/courses";
+import { CourseCard } from "@/components/course-card";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const courses = await getPublishedCourses();
+  const destaque = courses.slice(0, 6);
+
   return (
     <div>
-      {/* Hero */}
       <section className="bg-brand-light">
         <div className="mx-auto max-w-6xl px-4 py-20 text-center">
           <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-brand">
@@ -18,57 +22,44 @@ export default function HomePage() {
             acompanhe seu progresso.
           </p>
           <div className="mt-8 flex justify-center gap-4">
-            <Link
-              href="/"
-              className="rounded-lg bg-brand px-6 py-3 font-medium text-white transition hover:bg-brand-dark"
-            >
+            <Link href="/cursos" className="rounded-lg bg-brand px-6 py-3 font-medium text-white transition hover:bg-brand-dark">
               Ver cursos
             </Link>
-            <Link
-              href="/health"
-              className="rounded-lg border border-brand px-6 py-3 font-medium text-brand transition hover:bg-white"
-            >
-              Status da plataforma
+            <Link href="/cadastro" className="rounded-lg border border-brand px-6 py-3 font-medium text-brand transition hover:bg-white">
+              Criar conta
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Destaques */}
       <section className="mx-auto max-w-6xl px-4 py-16">
-        <h2 className="text-center text-2xl font-bold text-brand-dark">
-          O que você vai encontrar
-        </h2>
-        <div className="mt-10 grid gap-6 sm:grid-cols-3">
-          {[
-            {
-              titulo: "Videoaulas organizadas",
-              texto:
-                "Cursos divididos em módulos e aulas, com vídeo de qualidade e materiais de apoio.",
-            },
-            {
-              titulo: "Acompanhe seu progresso",
-              texto:
-                "Marque aulas concluídas, veja sua porcentagem e continue de onde parou.",
-            },
-            {
-              titulo: "Gratuitos e pagos",
-              texto:
-                "Comece por cursos introdutórios gratuitos e avance para formações completas.",
-            },
-          ].map((c) => (
-            <div
-              key={c.titulo}
-              className="rounded-xl border border-slate-200 p-6 transition hover:shadow-md"
-            >
-              <h3 className="text-lg font-semibold text-brand-dark">{c.titulo}</h3>
-              <p className="mt-2 text-sm text-slate-600">{c.texto}</p>
-            </div>
-          ))}
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-brand-dark">Cursos em destaque</h2>
+          <Link href="/cursos" className="text-sm font-medium text-brand hover:underline">
+            Ver todos →
+          </Link>
         </div>
-        <p className="mt-12 text-center text-sm text-slate-400">
-          Plataforma em construção — Fase 0 (fundação) concluída.
-        </p>
+
+        {destaque.length > 0 ? (
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {destaque.map((c) => (
+              <CourseCard key={c.id} c={c} />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-8 grid gap-6 sm:grid-cols-3">
+            {[
+              { t: "Videoaulas organizadas", d: "Cursos em módulos e aulas, com vídeo de qualidade e materiais de apoio." },
+              { t: "Acompanhe seu progresso", d: "Marque aulas concluídas, veja sua porcentagem e continue de onde parou." },
+              { t: "Gratuitos e pagos", d: "Comece por cursos introdutórios gratuitos e avance para formações completas." },
+            ].map((c) => (
+              <div key={c.t} className="rounded-xl border border-slate-200 p-6">
+                <h3 className="text-lg font-semibold text-brand-dark">{c.t}</h3>
+                <p className="mt-2 text-sm text-slate-600">{c.d}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

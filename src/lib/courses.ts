@@ -66,3 +66,57 @@ export async function getCourseTree(courseId: string) {
   );
   return course;
 }
+
+// ---------- Catálogo público (Fase 5) ----------
+export async function getPublishedCourses(
+  opts: { search?: string; category?: string; free?: string } = {}
+): Promise<CourseRow[]> {
+  const supabase = createClient();
+  let q = supabase
+    .from("courses")
+    .select("*")
+    .eq("status", "publicado")
+    .order("created_at", { ascending: false });
+  if (opts.search) q = q.ilike("title", `%${opts.search}%`);
+  if (opts.category) q = q.eq("category", opts.category);
+  if (opts.free === "1") q = q.eq("is_free", true);
+  if (opts.free === "0") q = q.eq("is_free", false);
+  const { data } = await q;
+  return (data ?? []) as CourseRow[];
+}
+
+export async function getCategories(): Promise<string[]> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("courses")
+    .select("category")
+    .eq("status", "publicado");
+  const set = new Set<string>();
+  for (const r of (data ?? []) as { category: string | null }[]) {
+    if (r.category) set.add(r.category);
+  }
+  return Array.from(set).sort();
+}
+
+export async function getPublicCourse(id: string) {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("courses")
+    .select(
+      "*, modules(id,title,position,lessons(id,title,position,is_preview)), instructor:instructor_id(full_name, avatar_url)"
+    )
+    .eq("id", id)
+    .eq("status", "publicado")
+    .single();
+  if (!data) return null;
+  const course = data as any;
+  course.modules = (course.modules ?? []).sort(
+    (a: any, b: any) => a.position - b.position
+  );
+  for (const m of course.modules) {
+    m.lessons = (m.lessons ?? []).sort(
+      (a: any, b: any) => a.position - b.position
+    );
+  }
+  return course;
+}

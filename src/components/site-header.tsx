@@ -16,7 +16,7 @@ export async function SiteHeader() {
         </Link>
 
         <nav className="flex items-center gap-5 text-sm font-medium text-slate-600">
-          <Link href="/" className="hover:text-brand">
+          <Link href="/cursos" className="hover:text-brand">
             Cursos
           </Link>
 
