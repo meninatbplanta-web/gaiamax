@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { getCourseTree, STATUS_LABEL } from "@/lib/courses";
+import { VimeoPlayer } from "@/components/vimeo-player";
 import {
   updateCourseDetails, setCourseStatus, deleteCourse, uploadCover,
   createModule, renameModule, deleteModule, moveModule,
@@ -147,7 +148,12 @@ export default async function EditorCursoPage({ params }: { params: { id: string
                       <input type="hidden" name="lesson_id" value={l.id} />
                       <input name="title" defaultValue={l.title} className={input} />
                       <textarea name="description" defaultValue={l.description ?? ""} rows={2} placeholder="Descrição da aula" className={input} />
-                      <input name="vimeo_id" defaultValue={l.vimeo_id ?? ""} placeholder="ID ou link do vídeo no Vimeo (Fase 4)" className={input} />
+                      <input name="vimeo_id" defaultValue={l.vimeo_id ?? ""} placeholder="ID ou link do vídeo no Vimeo (ex.: https://vimeo.com/123456789/abc123)" className={input} />
+                      {l.vimeo_id ? (
+                        <div className="mt-2">
+                          <VimeoPlayer value={l.vimeo_id} title={l.title} />
+                        </div>
+                      ) : null}
                       <label className="flex items-center gap-2 text-sm text-slate-600">
                         <input type="checkbox" name="is_preview" defaultChecked={l.is_preview} className="h-4 w-4" />
                         Aula de pré-visualização (free preview)
