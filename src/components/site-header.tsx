@@ -28,6 +28,11 @@ export async function SiteHeader() {
               <Link href="/suporte" className="hover:text-brand">
                 Suporte
               </Link>
+              {profile?.role === "admin" ? (
+                <Link href="/admin" className="hover:text-brand">
+                  Admin
+                </Link>
+              ) : null}
               <Link href="/conta" className="hover:text-brand">
                 {profile?.full_name?.split(" ")[0] ?? "Minha conta"}
               </Link>
