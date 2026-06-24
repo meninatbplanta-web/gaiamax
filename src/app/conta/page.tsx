@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { signOut } from "@/app/auth/actions";
+import { deleteMyAccount } from "@/app/conta/actions";
 
 const ROTULO_PAPEL: Record<string, string> = {
   aluno: "Aluno",
@@ -63,9 +64,21 @@ export default async function ContaPage() {
         </button>
       </form>
 
-      <p className="mt-10 text-center text-sm text-slate-400">
-        Em breve: seus cursos e seu progresso aparecerao aqui (Fase 6 e 7).
-      </p>
+      <details className="mt-10 rounded-xl border border-red-200 p-5">
+        <summary className="cursor-pointer text-sm font-medium text-red-600">Excluir minha conta</summary>
+        <p className="mt-3 text-sm text-slate-600">
+          Esta acao e permanente: remove sua conta e todos os dados associados (matriculas, progresso e duvidas). Nao pode ser desfeita.
+        </p>
+        <form action={deleteMyAccount} className="mt-3 flex items-center gap-3">
+          <label className="flex items-center gap-2 text-sm text-slate-600">
+            <input type="checkbox" required className="h-4 w-4" />
+            Entendo que esta acao e permanente.
+          </label>
+          <button className="ml-auto rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">
+            Excluir conta
+          </button>
+        </form>
+      </details>
     </div>
   );
 }
