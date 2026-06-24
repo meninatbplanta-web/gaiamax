@@ -152,4 +152,13 @@ export default async function CursoDetalhePage({
 
               <dl className="mt-5 space-y-2 text-sm">
                 <div className="flex justify-between"><dt className="text-slate-500">Instrutor</dt><dd className="font-medium text-slate-700">{instrutor}</dd></div>
-                <div className="flex justify-between"><dt className="text-sl
+                <div className="flex justify-between"><dt className="text-slate-500">Nível</dt><dd className="font-medium text-slate-700">{LEVEL_LABEL[course.level]}</dd></div>
+                <div className="flex justify-between"><dt className="text-slate-500">Aulas</dt><dd className="font-medium text-slate-700">{totalAulas}</dd></div>
+              </dl>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+}

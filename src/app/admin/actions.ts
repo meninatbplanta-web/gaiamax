@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireRole } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
 export async function setUserRole(formData: FormData) {
@@ -64,4 +65,32 @@ export async function grantEnrollment(formData: FormData) {
       .insert({ user_id: found.id, course_id: courseId, source: "manual" });
   }
   revalidatePath("/admin/matriculas");
+}
+
+// Gera uma senha temporária legível (sem caracteres ambíguos).
+function gerarSenhaTemporaria(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  let s = "";
+  for (let i = 0; i < 10; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return s;
+}
+
+// Admin reseta a senha de um usuário: define uma senha temporária e marca
+// que o usuário deve trocá-la no próximo login. Retorna a senha temporária
+// para o admin repassar ao usuário.
+export async function resetUserPassword(
+  userId: string
+): Promise<{ tempPassword?: string; error?: string }> {
+  await requireRole(["admin"]);
+  if (!userId) return { error: "Usuário inválido." };
+
+  const temp = gerarSenhaTemporaria();
+  const admin = createAdminClient();
+  const { error } = await admin.auth.admin.updateUserById(userId, {
+    password: temp,
+    app_metadata: { must_change_password: true },
+  });
+  if (error) return { error: error.message };
+
+  return { tempPassword: temp };
 }

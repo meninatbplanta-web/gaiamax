@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { getAllUsers } from "@/lib/admin";
 import { setUserRole } from "@/app/admin/actions";
+import { ResetPasswordButton } from "@/components/reset-password-button";
 
 export const dynamic = "force-dynamic";
 
@@ -22,15 +23,18 @@ export default async function AdminUsuariosPage() {
               <p className="font-medium text-slate-800">{u.full_name ?? "(sem nome)"}</p>
               <p className="text-xs text-slate-400">{u.email}</p>
             </div>
-            <form action={setUserRole} className="flex items-center gap-2">
-              <input type="hidden" name="user_id" value={u.id} />
-              <select name="role" defaultValue={u.role} className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
-                <option value="aluno">Aluno</option>
-                <option value="instrutor">Instrutor</option>
-                <option value="admin">Administrador</option>
-              </select>
-              <button className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">Salvar</button>
-            </form>
+            <div className="flex flex-wrap items-center gap-3">
+              <form action={setUserRole} className="flex items-center gap-2">
+                <input type="hidden" name="user_id" value={u.id} />
+                <select name="role" defaultValue={u.role} className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
+                  <option value="aluno">Aluno</option>
+                  <option value="instrutor">Instrutor</option>
+                  <option value="admin">Administrador</option>
+                </select>
+                <button className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">Salvar</button>
+              </form>
+              <ResetPasswordButton userId={u.id} email={u.email} />
+            </div>
           </div>
         ))}
       </div>

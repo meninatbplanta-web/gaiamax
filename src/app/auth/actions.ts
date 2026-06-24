@@ -65,10 +65,33 @@ export async function requestPasswordReset(formData: FormData) {
 
 export async function updatePassword(formData: FormData) {
   const password = String(formData.get("password") ?? "");
+  const confirm = String(formData.get("confirm") ?? "");
+
+  if (password.length < 6) {
+    redirect(`/redefinir-senha?erro=${encodeURIComponent("A senha deve ter ao menos 6 caracteres.")}`);
+  }
+  if (password !== confirm) {
+    redirect(`/redefinir-senha?erro=${encodeURIComponent("As senhas não coincidem.")}`);
+  }
+
   const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { error } = await supabase.auth.updateUser({ password });
   if (error) {
     redirect(`/redefinir-senha?erro=${encodeURIComponent(error.message)}`);
   }
+
+  // Remove a marcação de troca obrigatória (caso a senha tenha sido resetada pelo admin).
+  if (user && (user.app_metadata as any)?.must_change_password) {
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const admin = createAdminClient();
+    await admin.auth.admin.updateUserById(user.id, {
+      app_metadata: { must_change_password: false },
+    });
+  }
+
   redirect("/conta?senha=1");
 }

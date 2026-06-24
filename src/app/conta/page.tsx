@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { signOut } from "@/app/auth/actions";
-import { deleteMyAccount } from "@/app/conta/actions";
+import { deleteMyAccount, updateProfile, changePassword } from "@/app/conta/actions";
 
 const ROTULO_PAPEL: Record<string, string> = {
   aluno: "Aluno",
@@ -9,7 +9,13 @@ const ROTULO_PAPEL: Record<string, string> = {
   admin: "Administrador",
 };
 
-export default async function ContaPage() {
+export const dynamic = "force-dynamic";
+
+export default async function ContaPage({
+  searchParams,
+}: {
+  searchParams: { perfil?: string; senha?: string; email_pendente?: string; erro?: string };
+}) {
   const { user, profile } = await requireUser();
   const papel = profile?.role ?? "aluno";
 
@@ -17,46 +23,113 @@ export default async function ContaPage() {
     <div className="mx-auto max-w-2xl px-4 py-16">
       <h1 className="text-2xl font-bold text-brand-dark">Minha conta</h1>
 
+      {searchParams.erro ? (
+        <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{searchParams.erro}</p>
+      ) : null}
+      {searchParams.perfil ? (
+        <p className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
+          Dados atualizados com sucesso.
+          {searchParams.email_pendente
+            ? " Enviamos um link de confirmação para o novo e-mail — o e-mail só muda após você confirmar."
+            : ""}
+        </p>
+      ) : null}
+      {searchParams.senha ? (
+        <p className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
+          Senha alterada com sucesso.
+        </p>
+      ) : null}
+
+      {/* Dados do perfil */}
       <div className="mt-6 rounded-xl border border-slate-200 p-6">
-        <dl className="space-y-3 text-sm">
-          <div className="flex justify-between">
-            <dt className="text-slate-500">Nome</dt>
-            <dd className="font-medium text-slate-800">{profile?.full_name ?? "-"}</dd>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-brand-dark">Meus dados</h2>
+          <span className="text-xs font-medium text-brand">{ROTULO_PAPEL[papel] ?? papel}</span>
+        </div>
+        <form action={updateProfile} className="mt-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700">Nome</label>
+            <input
+              name="full_name"
+              type="text"
+              required
+              defaultValue={profile?.full_name ?? ""}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-brand"
+            />
           </div>
-          <div className="flex justify-between">
-            <dt className="text-slate-500">E-mail</dt>
-            <dd className="font-medium text-slate-800">{user.email}</dd>
+          <div>
+            <label className="block text-sm font-medium text-slate-700">E-mail</label>
+            <input
+              name="email"
+              type="email"
+              required
+              defaultValue={user.email ?? ""}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-brand"
+            />
+            <p className="mt-1 text-xs text-slate-400">
+              Alterar o e-mail exige confirmação pelo link enviado ao novo endereço.
+            </p>
           </div>
-          <div className="flex justify-between">
-            <dt className="text-slate-500">Perfil</dt>
-            <dd className="font-medium text-brand">{ROTULO_PAPEL[papel] ?? papel}</dd>
-          </div>
-        </dl>
+          <button className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark">
+            Salvar dados
+          </button>
+        </form>
       </div>
 
-      <Link
-        href="/meus-cursos"
-        className="mt-4 inline-block rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
-      >
-        Ir para Meus cursos
-      </Link>
+      {/* Troca de senha */}
+      <div className="mt-6 rounded-xl border border-slate-200 p-6">
+        <h2 className="text-lg font-semibold text-brand-dark">Trocar senha</h2>
+        <form action={changePassword} className="mt-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700">Nova senha</label>
+            <input
+              name="password"
+              type="password"
+              required
+              minLength={6}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-brand"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700">Confirmar nova senha</label>
+            <input
+              name="confirm"
+              type="password"
+              required
+              minLength={6}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-brand"
+            />
+          </div>
+          <button className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark">
+            Salvar nova senha
+          </button>
+        </form>
+      </div>
 
-      {(papel === "instrutor" || papel === "admin") && (
+      <div className="mt-6 flex flex-wrap gap-3">
         <Link
-          href="/instrutor"
-          className="mt-4 inline-block rounded-lg border border-brand px-4 py-2 text-sm font-medium text-brand hover:bg-brand-light"
+          href="/meus-cursos"
+          className="inline-block rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
         >
-          Painel do instrutor
+          Ir para Meus cursos
         </Link>
-      )}
-      {papel === "admin" && (
-        <Link
-          href="/admin"
-          className="mt-4 ml-3 inline-block rounded-lg border border-brand px-4 py-2 text-sm font-medium text-brand hover:bg-brand-light"
-        >
-          Painel do administrador
-        </Link>
-      )}
+        {(papel === "instrutor" || papel === "admin") && (
+          <Link
+            href="/instrutor"
+            className="inline-block rounded-lg border border-brand px-4 py-2 text-sm font-medium text-brand hover:bg-brand-light"
+          >
+            Painel do instrutor
+          </Link>
+        )}
+        {papel === "admin" && (
+          <Link
+            href="/admin"
+            className="inline-block rounded-lg border border-brand px-4 py-2 text-sm font-medium text-brand hover:bg-brand-light"
+          >
+            Painel do administrador
+          </Link>
+        )}
+      </div>
 
       <form action={signOut} className="mt-8">
         <button className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200">
