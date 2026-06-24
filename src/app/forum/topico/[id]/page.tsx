@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { getForumTopic } from "@/lib/forum";
+import { getForumTopic, getForumAuthorsMeta } from "@/lib/forum";
 import { getUserAndProfile } from "@/lib/auth";
 import { createPost } from "@/app/forum/actions";
+import { AuthorBadges } from "@/components/author-badges";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,7 @@ export default async function TopicoPage({
   }
 
   const { topic, posts } = data;
+  const meta = await getForumAuthorsMeta(posts.map((p: any) => p.author_id));
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
@@ -53,15 +55,21 @@ export default async function TopicoPage({
       ) : null}
 
       <div className="mt-6 space-y-4">
-        {posts.map((p) => (
-          <div key={p.id} className="rounded-xl border border-slate-200 p-5">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium text-slate-800">{p.author?.full_name ?? "Usuário"}</span>
-              <span className="text-xs text-slate-400">{dataHora(p.created_at)}</span>
+        {posts.map((p: any) => {
+          const am = meta.get(p.author_id);
+          return (
+            <div key={p.id} className="rounded-xl border border-slate-200 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="font-medium text-slate-800">{am?.full_name ?? p.author?.full_name ?? "Usuário"}</span>
+                  <AuthorBadges meta={am} />
+                </span>
+                <span className="text-xs text-slate-400">{dataHora(p.created_at)}</span>
+              </div>
+              <p className="mt-3 whitespace-pre-line text-slate-700">{p.body}</p>
             </div>
-            <p className="mt-3 whitespace-pre-line text-slate-700">{p.body}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="mt-8">

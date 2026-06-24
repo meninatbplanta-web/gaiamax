@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { getForumCategory } from "@/lib/forum";
+import { getForumCategory, getForumAuthorsMeta } from "@/lib/forum";
 import { getUserAndProfile } from "@/lib/auth";
+import { AuthorBadges } from "@/components/author-badges";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,7 @@ export default async function ForumCategoryPage({
   }
 
   const { category, topics } = data;
+  const meta = await getForumAuthorsMeta(topics.map((t: any) => t.author_id));
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
@@ -57,8 +59,9 @@ export default async function ForumCategoryPage({
         {topics.length === 0 ? (
           <p className="text-sm text-slate-400">Nenhum tópico ainda. Seja o primeiro a abrir uma conversa.</p>
         ) : (
-          topics.map((t) => {
+          topics.map((t: any) => {
             const msgs = t.posts?.[0]?.count ?? 0;
+            const am = meta.get(t.author_id);
             return (
               <Link
                 key={t.id}
@@ -71,8 +74,10 @@ export default async function ForumCategoryPage({
                     {t.is_locked ? <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">trancado</span> : null}
                     {t.title}
                   </p>
-                  <p className="mt-0.5 text-xs text-slate-400">
-                    por {t.author?.full_name ?? "Usuário"} · {dataCurta(t.updated_at)}
+                  <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
+                    por {am?.full_name ?? t.author?.full_name ?? "Usuário"}
+                    <AuthorBadges meta={am} />
+                    <span>· {dataCurta(t.updated_at)}</span>
                   </p>
                 </div>
                 <span className="shrink-0 text-xs text-slate-400">{msgs} msg</span>
