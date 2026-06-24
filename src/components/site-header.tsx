@@ -20,6 +20,10 @@ export async function SiteHeader() {
             Cursos
           </Link>
 
+          <Link href="/forum" className="hover:text-brand">
+            Fórum
+          </Link>
+
           {user ? (
             <>
               <Link href="/meus-cursos" className="hover:text-brand">

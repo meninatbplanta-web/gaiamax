@@ -94,3 +94,43 @@ export async function resetUserPassword(
 
   return { tempPassword: temp };
 }
+
+// ---------- Fórum: categorias ----------
+function slugify(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export async function addForumCategory(formData: FormData) {
+  await requireRole(["admin"]);
+  const name = String(formData.get("name") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim() || null;
+  const position = Number(formData.get("position") ?? 0) || 0;
+  if (!name) {
+    revalidatePath("/admin/forum");
+    return;
+  }
+  const supabase = createClient();
+  await supabase.from("forum_categories").insert({
+    name,
+    slug: slugify(name),
+    description,
+    position,
+  });
+  revalidatePath("/admin/forum");
+  revalidatePath("/forum");
+}
+
+export async function deleteForumCategory(formData: FormData) {
+  await requireRole(["admin"]);
+  const id = String(formData.get("category_id"));
+  const supabase = createClient();
+  await supabase.from("forum_categories").delete().eq("id", id);
+  revalidatePath("/admin/forum");
+  revalidatePath("/forum");
+}

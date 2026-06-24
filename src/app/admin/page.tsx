@@ -38,6 +38,7 @@ export default async function AdminPage() {
         <NavLink href="/admin/cursos" title="Cursos" desc="Publicar/despublicar e mapear produtos Eduzz/Lia." />
         <NavLink href="/admin/matriculas" title="Matrículas" desc="Conceder e revogar acesso; ver pagamentos." />
         <NavLink href="/suporte" title="Suporte" desc="Moderar e responder as dúvidas dos alunos." />
+        <NavLink href="/admin/forum" title="Fórum" desc="Criar e organizar as áreas/categorias do fórum." />
       </div>
     </div>
   );
