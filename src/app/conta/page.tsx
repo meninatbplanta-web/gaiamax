@@ -33,6 +33,13 @@ export default async function ContaPage() {
         </dl>
       </div>
 
+      <Link
+        href="/meus-cursos"
+        className="mt-4 inline-block rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
+      >
+        Ir para Meus cursos
+      </Link>
+
       {(papel === "instrutor" || papel === "admin") && (
         <Link
           href="/instrutor"

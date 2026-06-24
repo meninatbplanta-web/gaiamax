@@ -26,5 +26,5 @@ export async function enrollFree(formData: FormData) {
     .from("enrollments")
     .insert({ user_id: user.id, course_id: courseId, source: "gratuito" });
 
-  redirect(`/cursos/${courseId}?inscrito=1`);
+  redirect(`/aprender/${courseId}`);
 }

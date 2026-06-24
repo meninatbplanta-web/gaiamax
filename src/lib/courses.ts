@@ -120,3 +120,51 @@ export async function getPublicCourse(id: string) {
   }
   return course;
 }
+
+// ---------- Área do aluno (Fase 6) ----------
+export async function getEnrolledCourses(): Promise<CourseRow[]> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("enrollments")
+    .select("created_at, course:course_id(*)")
+    .eq("user_id", user.id)
+    .eq("status", "ativa")
+    .order("created_at", { ascending: false });
+  return ((data ?? []) as any[]).map((e) => e.course).filter(Boolean) as CourseRow[];
+}
+
+// Carrega o curso para a área de aprendizagem e indica se o usuário tem acesso.
+export async function getLearnCourse(courseId: string) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { course: null, allowed: false };
+
+  const course = await getCourseTree(courseId);
+  if (!course) return { course: null, allowed: false };
+
+  const { data: enr } = await supabase
+    .from("enrollments")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("course_id", courseId)
+    .eq("status", "ativa")
+    .maybeSingle();
+
+  const { data: prof } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  const isOwner = course.instructor_id === user.id;
+  const isAdmin = prof?.role === "admin";
+  const allowed = !!enr || isOwner || isAdmin;
+
+  return { course, allowed };
+}
