@@ -25,6 +25,9 @@ export async function SiteHeader() {
               <Link href="/meus-cursos" className="hover:text-brand">
                 Meus cursos
               </Link>
+              <Link href="/suporte" className="hover:text-brand">
+                Suporte
+              </Link>
               <Link href="/conta" className="hover:text-brand">
                 {profile?.full_name?.split(" ")[0] ?? "Minha conta"}
               </Link>
