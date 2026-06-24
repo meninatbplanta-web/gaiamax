@@ -31,7 +31,7 @@ export async function getThread(id: string) {
   if (!thread) return null;
   const { data: messages } = await supabase
     .from("support_messages")
-    .select("*")
+    .select("*, sender:sender_id(full_name)")
     .eq("thread_id", id)
     .order("created_at", { ascending: true });
   return { thread: thread as ThreadRow, messages: (messages ?? []) as any[] };

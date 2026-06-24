@@ -37,7 +37,6 @@ export async function createThread(formData: FormData) {
     thread_id: thread.id,
     sender_id: user.id,
     body,
-    sender_name: name,
   });
 
   await sendEmail({
@@ -69,7 +68,6 @@ export async function postMessage(formData: FormData) {
     thread_id: threadId,
     sender_id: user.id,
     body,
-    sender_name: name,
   });
   await supabase
     .from("support_threads")
