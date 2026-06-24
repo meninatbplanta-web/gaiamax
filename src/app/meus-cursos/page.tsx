@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
-import { getEnrolledCourses, LEVEL_LABEL } from "@/lib/courses";
+import { getEnrolledCoursesWithProgress } from "@/lib/courses";
+import { LEVEL_LABEL } from "@/lib/courses";
 
 export const dynamic = "force-dynamic";
 
 export default async function MeusCursosPage() {
   await requireUser();
-  const courses = await getEnrolledCourses();
+  const courses = await getEnrolledCoursesWithProgress();
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
@@ -20,27 +21,36 @@ export default async function MeusCursosPage() {
         </div>
       ) : (
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {courses.map((c) => (
-            <Link
-              key={c.id}
-              href={`/aprender/${c.id}`}
-              className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 transition hover:shadow-md"
-            >
-              <div className="aspect-video w-full bg-brand-light">
-                {c.cover_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={c.cover_url} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-sm font-semibold text-brand/40">GaiaMax</div>
-                )}
-              </div>
-              <div className="flex flex-1 flex-col p-4">
-                <h3 className="font-semibold text-brand-dark group-hover:text-brand">{c.title}</h3>
-                <p className="mt-1 text-xs text-slate-400">{LEVEL_LABEL[c.level]}</p>
-                <span className="mt-auto pt-3 text-sm font-medium text-brand">Continuar →</span>
-              </div>
-            </Link>
-          ))}
+          {courses.map((c) => {
+            const pct = c.total > 0 ? Math.round((c.completed / c.total) * 100) : 0;
+            return (
+              <Link
+                key={c.id}
+                href={`/aprender/${c.id}`}
+                className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 transition hover:shadow-md"
+              >
+                <div className="aspect-video w-full bg-brand-light">
+                  {c.cover_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={c.cover_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-sm font-semibold text-brand/40">GaiaMax</div>
+                  )}
+                </div>
+                <div className="flex flex-1 flex-col p-4">
+                  <h3 className="font-semibold text-brand-dark group-hover:text-brand">{c.title}</h3>
+                  <p className="mt-1 text-xs text-slate-400">{LEVEL_LABEL[c.level]}</p>
+                  <div className="mt-3">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                      <div className="h-full rounded-full bg-brand" style={{ width: `${pct}%` }} />
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">{pct}% concluído</p>
+                  </div>
+                  <span className="mt-auto pt-3 text-sm font-medium text-brand">Continuar →</span>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

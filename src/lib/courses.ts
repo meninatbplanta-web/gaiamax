@@ -143,10 +143,10 @@ export async function getLearnCourse(courseId: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { course: null, allowed: false };
+  if (!user) return { course: null, allowed: false, completed: new Set<string>() };
 
   const course = await getCourseTree(courseId);
-  if (!course) return { course: null, allowed: false };
+  if (!course) return { course: null, allowed: false, completed: new Set<string>() };
 
   const { data: enr } = await supabase
     .from("enrollments")
@@ -166,5 +166,51 @@ export async function getLearnCourse(courseId: string) {
   const isAdmin = prof?.role === "admin";
   const allowed = !!enr || isOwner || isAdmin;
 
-  return { course, allowed };
+  const { data: prog } = await supabase
+    .from("lesson_progress")
+    .select("lesson_id")
+    .eq("user_id", user.id)
+    .eq("completed", true);
+  const completed = new Set(
+    ((prog ?? []) as { lesson_id: string }[]).map((p) => p.lesson_id)
+  );
+
+  return { course, allowed, completed };
+}
+
+// Cursos matriculados com progresso (para "Meus cursos")
+export async function getEnrolledCoursesWithProgress() {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [] as any[];
+
+  const { data: enr } = await supabase
+    .from("enrollments")
+    .select("created_at, course:course_id(id,title,cover_url,level,modules(lessons(id)))")
+    .eq("user_id", user.id)
+    .eq("status", "ativa")
+    .order("created_at", { ascending: false });
+
+  const { data: prog } = await supabase
+    .from("lesson_progress")
+    .select("lesson_id")
+    .eq("user_id", user.id)
+    .eq("completed", true);
+  const done = new Set(((prog ?? []) as { lesson_id: string }[]).map((p) => p.lesson_id));
+
+  return ((enr ?? []) as any[])
+    .map((e) => {
+      const c = e.course;
+      if (!c) return null;
+      const ids: string[] = [];
+      for (const m of c.modules ?? []) for (const l of m.lessons ?? []) ids.push(l.id);
+      const total = ids.length;
+      const completed = ids.filter((id) => done.has(id)).length;
+      return { id: c.id, title: c.title, cover_url: c.cover_url, level: c.level, total, completed };
+    })
+    .filter(Boolean) as {
+      id: string; title: string; cover_url: string | null; level: string; total: number; completed: number;
+    }[];
 }
