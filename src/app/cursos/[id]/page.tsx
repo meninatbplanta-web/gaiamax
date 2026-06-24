@@ -118,8 +118,16 @@ export default async function CursoDetalhePage({
 
               <div className="mt-4">
                 {enrolled ? (
-                  <div className="rounded-lg bg-green-50 px-4 py-3 text-center text-sm font-medium text-green-700">
-                    Você já está inscrito ✓
+                  <div className="space-y-3">
+                    <div className="rounded-lg bg-green-50 px-4 py-3 text-center text-sm font-medium text-green-700">
+                      Você já está inscrito ✓
+                    </div>
+                    <Link
+                      href={`/aprender/${course.id}`}
+                      className="block rounded-lg bg-brand px-4 py-3 text-center font-medium text-white hover:bg-brand-dark"
+                    >
+                      Acessar curso
+                    </Link>
                   </div>
                 ) : !user ? (
                   <Link href="/login" className="block rounded-lg bg-brand px-4 py-3 text-center font-medium text-white hover:bg-brand-dark">
@@ -144,13 +152,4 @@ export default async function CursoDetalhePage({
 
               <dl className="mt-5 space-y-2 text-sm">
                 <div className="flex justify-between"><dt className="text-slate-500">Instrutor</dt><dd className="font-medium text-slate-700">{instrutor}</dd></div>
-                <div className="flex justify-between"><dt className="text-slate-500">Nível</dt><dd className="font-medium text-slate-700">{LEVEL_LABEL[course.level]}</dd></div>
-                <div className="flex justify-between"><dt className="text-slate-500">Aulas</dt><dd className="font-medium text-slate-700">{totalAulas}</dd></div>
-              </dl>
-            </div>
-          </div>
-        </aside>
-      </div>
-    </div>
-  );
-}
+                <div className="flex justify-between"><dt className="text-sl
