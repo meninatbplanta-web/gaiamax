@@ -20,7 +20,7 @@ export default async function HomePage() {
           aria-hidden="true"
         >
           <source
-            src="https://rota-livre.com/arquivos_comuns/CS19329_CO_Product_Anon_Home_Page_Video_Sizzle_en_US_1920x1080_V.mp4"
+            src="https://zqkyrewtrudslmblgdxm.supabase.co/storage/v1/object/public/site/hero.mp4"
             type="video/mp4"
           />
         </video>
