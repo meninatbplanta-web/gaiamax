@@ -21,7 +21,7 @@ export default async function HomePage() {
             e espiritualidade aplicada. Aprenda com instrutores experientes e
             acompanhe seu progresso.
           </p>
-          <div className="mt-8 flex justify-center gap-4">
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
             <Link href="/cursos" className="rounded-lg bg-brand px-6 py-3 font-medium text-white transition hover:bg-brand-dark">
               Ver cursos
             </Link>
