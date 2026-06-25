@@ -31,7 +31,7 @@ export default async function ForumCategoryPage({
   }
 
   const { category, topics, total, pageSize } = data;
-  const meta = await getForumAuthorsMeta(topics.map((t: any) => t.author_id));
+  const meta = await getForumAuthorsMeta(topics.map((t: any) => t.author_id).filter(Boolean));
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
@@ -79,7 +79,7 @@ export default async function ForumCategoryPage({
                     {t.title}
                   </p>
                   <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
-                    por {am?.full_name ?? t.author?.full_name ?? "Usuário"}
+                    por {t.author_id ? (am?.full_name ?? t.author?.full_name ?? "Usuário") : "Membro da comunidade"}
                     <AuthorBadges meta={am} />
                     <span>· {dataCurta(t.updated_at)}</span>
                   </p>

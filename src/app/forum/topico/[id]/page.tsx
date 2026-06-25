@@ -46,11 +46,13 @@ export default async function TopicoPage({
     );
   }
 
-  const { topic, posts, total, pageSize } = data;
-  const meta = await getForumAuthorsMeta(posts.map((p: any) => p.author_id));
+  const { topic, posts, total, lastPostId, pageSize } = data;
+  const meta = await getForumAuthorsMeta(posts.map((p: any) => p.author_id).filter(Boolean));
   const reactions = await getReactionsForPosts(posts.map((p: any) => p.id), user?.id);
   const isAdmin = profile?.role === "admin";
+  const hasReplies = total > 1;
   const isOwnerTopic = !!user && user.id === topic.author_id;
+  const canDeleteTopic = isAdmin || (isOwnerTopic && !hasReplies);
 
   const btn =
     "rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50";
@@ -67,7 +69,7 @@ export default async function TopicoPage({
         {topic.title}
       </h1>
 
-      {(isAdmin || isOwnerTopic) ? (
+      {(isAdmin || canDeleteTopic) ? (
         <div className="mt-3 flex flex-wrap gap-2">
           {isAdmin ? (
             <>
@@ -83,13 +85,15 @@ export default async function TopicoPage({
               </form>
             </>
           ) : null}
-          <form action={deleteTopic}>
-            <input type="hidden" name="topic_id" value={topic.id} />
-            <input type="hidden" name="slug" value={topic.category?.slug ?? ""} />
-            <button className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50">
-              Excluir tópico
-            </button>
-          </form>
+          {canDeleteTopic ? (
+            <form action={deleteTopic}>
+              <input type="hidden" name="topic_id" value={topic.id} />
+              <input type="hidden" name="slug" value={topic.category?.slug ?? ""} />
+              <button className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50">
+                Excluir tópico
+              </button>
+            </form>
+          ) : null}
         </div>
       ) : null}
 
@@ -104,16 +108,23 @@ export default async function TopicoPage({
 
       <div className="mt-6 space-y-4">
         {posts.map((p: any, idx: number) => {
-          const am = meta.get(p.author_id);
-          const canEdit = (!!user && user.id === p.author_id) || isAdmin;
+          const am = p.author_id ? meta.get(p.author_id) : undefined;
+          const authorName = p.author_id ? (am?.full_name ?? p.author?.full_name ?? "Usuário") : "Membro da comunidade";
           const isOpening = page === 1 && idx === 0;
+          const isLast = p.id === lastPostId;
+          const isOwnPost = !!user && p.author_id === user.id;
+          const authorCanEdit = isOwnPost && isLast;
+          const authorCanDelete = authorCanEdit && !isOpening;
+          const showEdit = authorCanEdit || isAdmin;
+          const showDelete = authorCanDelete || isAdmin;
           const editado = p.updated_at && p.updated_at !== p.created_at;
           const rx = reactions.get(p.id) ?? { count: 0, mine: false };
+          const lockedForOwner = isOwnPost && !isLast && !isAdmin;
           return (
             <div key={p.id} className="rounded-xl border border-slate-200 p-5">
               <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
                 <span className="flex flex-wrap items-center gap-2">
-                  <span className="font-medium text-slate-800">{am?.full_name ?? p.author?.full_name ?? "Usuário"}</span>
+                  <span className="font-medium text-slate-800">{authorName}</span>
                   <AuthorBadges meta={am} />
                 </span>
                 <span className="text-xs text-slate-400">
@@ -142,7 +153,7 @@ export default async function TopicoPage({
                   <span className="text-slate-400">♥ {rx.count}</span>
                 )}
 
-                {canEdit ? (
+                {showEdit ? (
                   <details>
                     <summary className="cursor-pointer font-medium text-brand">Editar</summary>
                     <form action={updatePost} className="mt-2 space-y-2">
@@ -162,7 +173,7 @@ export default async function TopicoPage({
                   </details>
                 ) : null}
 
-                {canEdit && !isOpening ? (
+                {showDelete ? (
                   <form action={deletePost}>
                     <input type="hidden" name="post_id" value={p.id} />
                     <input type="hidden" name="topic_id" value={topic.id} />
@@ -171,7 +182,7 @@ export default async function TopicoPage({
                 ) : null}
 
                 {/* Denunciar (qualquer usuário logado que não seja o autor) */}
-                {user && user.id !== p.author_id ? (
+                {user && p.author_id && user.id !== p.author_id ? (
                   <details>
                     <summary className="cursor-pointer text-slate-400 hover:text-slate-600">Denunciar</summary>
                     <form action={reportPost} className="mt-2 space-y-2">
@@ -188,6 +199,12 @@ export default async function TopicoPage({
                       </button>
                     </form>
                   </details>
+                ) : null}
+
+                {lockedForOwner ? (
+                  <span className="text-slate-400">
+                    Já recebeu respostas — só o administrador pode editar ou excluir.
+                  </span>
                 ) : null}
               </div>
             </div>

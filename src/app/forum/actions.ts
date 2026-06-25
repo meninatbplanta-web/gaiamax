@@ -6,6 +6,23 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 
+// Verdadeiro se o post pertence ao usuário E é a última mensagem do tópico.
+async function isAuthorOfLastPost(supabase: any, postId: string, userId: string): Promise<boolean> {
+  const { data: post } = await supabase
+    .from("forum_posts")
+    .select("author_id, topic_id")
+    .eq("id", postId)
+    .maybeSingle();
+  if (!post || post.author_id !== userId) return false;
+  const { data: lastArr } = await supabase
+    .from("forum_posts")
+    .select("id")
+    .eq("topic_id", post.topic_id)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  return (lastArr?.[0]?.id ?? null) === postId;
+}
+
 export async function createTopic(formData: FormData) {
   const supabase = createClient();
   const {
@@ -102,15 +119,31 @@ export async function createPost(formData: FormData) {
 
 // ---------- Moderação e edição ----------
 
+// Excluir tópico: admin sempre; autor só se ainda não houver respostas.
 export async function deleteTopic(formData: FormData) {
   const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, profile } = await getUserAndProfile();
   if (!user) redirect("/login");
 
   const topicId = String(formData.get("topic_id"));
   const slug = String(formData.get("slug"));
+  const isAdmin = profile?.role === "admin";
+
+  if (!isAdmin) {
+    const { data: t } = await supabase
+      .from("forum_topics")
+      .select("author_id")
+      .eq("id", topicId)
+      .maybeSingle();
+    const { count } = await supabase
+      .from("forum_posts")
+      .select("id", { count: "exact", head: true })
+      .eq("topic_id", topicId);
+    if (!t || (t as any).author_id !== user.id || (count ?? 0) > 1) {
+      redirect(`/forum/topico/${topicId}`);
+    }
+  }
+
   await supabase.from("forum_topics").delete().eq("id", topicId);
   revalidatePath(`/forum/${slug}`);
   redirect(`/forum/${slug}`);
@@ -140,16 +173,20 @@ export async function toggleLock(formData: FormData) {
   redirect(`/forum/topico/${topicId}`);
 }
 
+// Editar post: admin sempre; autor só na última mensagem do tópico.
 export async function updatePost(formData: FormData) {
   const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, profile } = await getUserAndProfile();
   if (!user) redirect("/login");
 
   const postId = String(formData.get("post_id"));
   const topicId = String(formData.get("topic_id"));
   const body = String(formData.get("body") ?? "").trim();
+  const isAdmin = profile?.role === "admin";
+
+  if (!isAdmin && !(await isAuthorOfLastPost(supabase, postId, user.id))) {
+    redirect(`/forum/topico/${topicId}`);
+  }
 
   if (body) {
     await supabase
@@ -161,15 +198,27 @@ export async function updatePost(formData: FormData) {
   redirect(`/forum/topico/${topicId}`);
 }
 
+// Excluir post: admin sempre; autor só na última mensagem e desde que não seja a única.
 export async function deletePost(formData: FormData) {
   const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, profile } = await getUserAndProfile();
   if (!user) redirect("/login");
 
   const postId = String(formData.get("post_id"));
   const topicId = String(formData.get("topic_id"));
+  const isAdmin = profile?.role === "admin";
+
+  if (!isAdmin) {
+    const ok = await isAuthorOfLastPost(supabase, postId, user.id);
+    const { count } = await supabase
+      .from("forum_posts")
+      .select("id", { count: "exact", head: true })
+      .eq("topic_id", topicId);
+    if (!ok || (count ?? 0) <= 1) {
+      redirect(`/forum/topico/${topicId}`);
+    }
+  }
+
   await supabase.from("forum_posts").delete().eq("id", postId);
   revalidatePath(`/forum/topico/${topicId}`);
   redirect(`/forum/topico/${topicId}`);

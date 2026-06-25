@@ -75,10 +75,20 @@ export async function getForumTopic(id: string, page = 1) {
     .order("created_at", { ascending: true })
     .range(from, to);
 
+  // Última mensagem do tópico (global), para a regra de edição/exclusão.
+  const { data: lastArr } = await supabase
+    .from("forum_posts")
+    .select("id")
+    .eq("topic_id", id)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  const lastPostId = (lastArr?.[0] as any)?.id ?? null;
+
   return {
     topic: topic as any,
     posts: (posts ?? []) as any[],
     total: count ?? 0,
+    lastPostId,
     page,
     pageSize: POSTS_PAGE,
   };
