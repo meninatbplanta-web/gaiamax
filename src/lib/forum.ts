@@ -96,7 +96,7 @@ export async function getForumTopic(id: string, page = 1) {
 
 export type CourseBadge = { role_context: string; course_title: string };
 
-export type AuthorMeta = { full_name: string | null; role: string; badges: CourseBadge[] };
+export type AuthorMeta = { full_name: string | null; role: string; username: string | null; badges: CourseBadge[] };
 
 // Busca nome, papel e selos de curso de vários autores de uma vez (sem N+1).
 export async function getForumAuthorsMeta(userIds: string[]): Promise<Map<string, AuthorMeta>> {
@@ -111,10 +111,10 @@ export async function getForumAuthorsMeta(userIds: string[]): Promise<Map<string
   ]);
 
   for (const r of (names.data ?? []) as any[]) {
-    map.set(r.user_id, { full_name: r.full_name ?? null, role: r.role ?? "aluno", badges: [] });
+    map.set(r.user_id, { full_name: r.full_name ?? null, role: r.role ?? "aluno", username: r.username ?? null, badges: [] });
   }
   for (const b of (badges.data ?? []) as any[]) {
-    const m = map.get(b.user_id) ?? { full_name: null, role: "aluno", badges: [] };
+    const m = map.get(b.user_id) ?? { full_name: null, role: "aluno", username: null, badges: [] };
     m.badges.push({ role_context: b.role_context, course_title: b.course_title });
     map.set(b.user_id, m);
   }

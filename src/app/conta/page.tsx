@@ -53,6 +53,23 @@ export default async function ContaPage({
             />
           </div>
           <div>
+            <label className="block text-sm font-medium text-slate-700">Nome de usuário</label>
+            <div className="mt-1 flex items-center rounded-lg border border-slate-300 focus-within:border-brand">
+              <span className="pl-3 text-slate-400">@</span>
+              <input
+                name="username"
+                type="text"
+                required
+                minLength={3}
+                defaultValue={profile?.username ?? ""}
+                className="w-full rounded-lg bg-transparent px-2 py-2 outline-none"
+              />
+            </div>
+            <p className="mt-1 text-xs text-slate-400">
+              Identificador único, exibido no fórum. Apenas letras, números e _ (mínimo 3).
+            </p>
+          </div>
+          <div>
             <label className="block text-sm font-medium text-slate-700">E-mail</label>
             <input
               name="email"

@@ -21,12 +21,13 @@ export async function getAllUsers() {
   const admin = createAdminClient();
   const { data: list } = await admin.auth.admin.listUsers({ perPage: 1000 });
   const supabase = createClient();
-  const { data: profiles } = await supabase.from("profiles").select("id, full_name, role");
+  const { data: profiles } = await supabase.from("profiles").select("id, full_name, role, username");
   const map = new Map(((profiles ?? []) as any[]).map((p) => [p.id, p]));
   return (list?.users ?? []).map((u) => ({
     id: u.id,
     email: u.email ?? "",
     full_name: map.get(u.id)?.full_name ?? null,
+    username: (map.get(u.id)?.username ?? null) as string | null,
     role: (map.get(u.id)?.role ?? "aluno") as string,
     created_at: u.created_at,
   }));

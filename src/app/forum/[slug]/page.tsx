@@ -80,6 +80,7 @@ export default async function ForumCategoryPage({
                   </p>
                   <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
                     por {t.author_id ? (am?.full_name ?? t.author?.full_name ?? "Usuário") : "Membro da comunidade"}
+                    {am?.username ? <span className="text-slate-400">@{am.username}</span> : null}
                     <AuthorBadges meta={am} />
                     <span>· {dataCurta(t.updated_at)}</span>
                   </p>

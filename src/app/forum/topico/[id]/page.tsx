@@ -120,6 +120,7 @@ export default async function TopicoPage({
               <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
                 <span className="flex flex-wrap items-center gap-2">
                   <span className="font-medium text-slate-800">{authorName}</span>
+                  {am?.username ? <span className="text-xs text-slate-400">@{am.username}</span> : null}
                   <AuthorBadges meta={am} />
                 </span>
                 <span className="text-xs text-slate-400">

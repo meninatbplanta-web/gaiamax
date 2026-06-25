@@ -20,7 +20,7 @@ export async function deleteMyAccount() {
   redirect("/?conta_excluida=1");
 }
 
-// Atualiza os dados do perfil (nome e, opcionalmente, e-mail).
+// Atualiza os dados do perfil (nome, nome de usuário e, opcionalmente, e-mail).
 export async function updateProfile(formData: FormData) {
   const supabase = createClient();
   const {
@@ -30,14 +30,37 @@ export async function updateProfile(formData: FormData) {
 
   const fullName = String(formData.get("full_name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
+  const username = String(formData.get("username") ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, "");
 
   if (!fullName) {
     redirect(`/conta?erro=${encodeURIComponent("Informe seu nome.")}`);
   }
+  if (username.length < 3) {
+    redirect(
+      `/conta?erro=${encodeURIComponent(
+        "O nome de usuário deve ter ao menos 3 caracteres (apenas letras, números e _)."
+      )}`
+    );
+  }
 
-  await supabase.from("profiles").update({ full_name: fullName }).eq("id", user.id);
+  // Atualiza nome + username (username é único; trata colisão).
+  const { error: upErr } = await supabase
+    .from("profiles")
+    .update({ full_name: fullName, username })
+    .eq("id", user.id);
+  if (upErr) {
+    const msg =
+      (upErr as any).code === "23505"
+        ? "Este nome de usuário já está em uso. Escolha outro."
+        : upErr.message;
+    redirect(`/conta?erro=${encodeURIComponent(msg)}`);
+  }
   await supabase.auth.updateUser({ data: { full_name: fullName } });
 
+  // Troca de e-mail (envia confirmação ao novo endereço, se mudou).
   let emailPendente = false;
   if (email && email.toLowerCase() !== (user.email ?? "").toLowerCase()) {
     const { error } = await supabase.auth.updateUser({ email });

@@ -20,7 +20,10 @@ export default async function AdminUsuariosPage() {
         {users.map((u) => (
           <div key={u.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3">
             <div>
-              <p className="font-medium text-slate-800">{u.full_name ?? "(sem nome)"}</p>
+              <p className="font-medium text-slate-800">
+                {u.full_name ?? "(sem nome)"}
+                {u.username ? <span className="ml-2 text-xs font-normal text-slate-400">@{u.username}</span> : null}
+              </p>
               <p className="text-xs text-slate-400">{u.email}</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
