@@ -38,18 +38,34 @@ export async function updateProfile(formData: FormData) {
   if (!fullName) {
     redirect(`/conta?erro=${encodeURIComponent("Informe seu nome.")}`);
   }
-  if (username.length < 3) {
-    redirect(
-      `/conta?erro=${encodeURIComponent(
-        "O nome de usuário deve ter ao menos 3 caracteres (apenas letras, números e _)."
-      )}`
-    );
+
+  // Estado atual do username (para a regra de "1 alteração").
+  const { data: prof } = await supabase
+    .from("profiles")
+    .select("username, username_set")
+    .eq("id", user.id)
+    .maybeSingle();
+  const locked = !!(prof as any)?.username_set;
+  const currentUsername = ((prof as any)?.username ?? "") as string;
+
+  const updateData: Record<string, any> = { full_name: fullName };
+
+  // Username só pode ser alterado se ainda não foi definido (1 vez).
+  if (!locked && username !== currentUsername) {
+    if (username.length < 3) {
+      redirect(
+        `/conta?erro=${encodeURIComponent(
+          "O nome de usuário deve ter ao menos 3 caracteres (apenas letras, números e _)."
+        )}`
+      );
+    }
+    updateData.username = username;
+    updateData.username_set = true;
   }
 
-  // Atualiza nome + username (username é único; trata colisão).
   const { error: upErr } = await supabase
     .from("profiles")
-    .update({ full_name: fullName, username })
+    .update(updateData)
     .eq("id", user.id);
   if (upErr) {
     const msg =

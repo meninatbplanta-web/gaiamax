@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 export async function setUserRole(formData: FormData) {
   const supabase = createClient();
@@ -151,4 +152,27 @@ export async function deleteReportedPost(formData: FormData) {
   // Excluir o post resolve a denúncia (cascade) e remove o conteúdo.
   await supabase.from("forum_posts").delete().eq("id", postId);
   revalidatePath("/admin/forum/denuncias");
+}
+
+// Admin altera o @username de qualquer usuário (sempre permitido).
+export async function adminSetUsername(formData: FormData) {
+  await requireRole(["admin"]);
+  const userId = String(formData.get("user_id"));
+  const username = String(formData.get("username") ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, "");
+  if (username.length < 3) {
+    redirect(`/admin/usuarios?u_erro=${encodeURIComponent("@ inválido (mín. 3; letras, números e _).")}`);
+  }
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ username, username_set: true })
+    .eq("id", userId);
+  if (error) {
+    const msg = (error as any).code === "23505" ? "Este @ já está em uso." : error.message;
+    redirect(`/admin/usuarios?u_erro=${encodeURIComponent(msg)}`);
+  }
+  redirect("/admin/usuarios?u_ok=1");
 }
