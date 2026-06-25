@@ -8,6 +8,9 @@ export type ForumCategory = {
   position: number;
 };
 
+export const TOPICS_PAGE = 20;
+export const POSTS_PAGE = 30;
+
 export async function getForumCategories(): Promise<ForumCategory[]> {
   const supabase = createClient();
   const { data } = await supabase
@@ -17,7 +20,7 @@ export async function getForumCategories(): Promise<ForumCategory[]> {
   return (data ?? []) as ForumCategory[];
 }
 
-export async function getForumCategory(slug: string) {
+export async function getForumCategory(slug: string, page = 1) {
   const supabase = createClient();
   const { data: category } = await supabase
     .from("forum_categories")
@@ -26,45 +29,62 @@ export async function getForumCategory(slug: string) {
     .maybeSingle();
   if (!category) return null;
 
-  const { data: topics } = await supabase
+  const from = (page - 1) * TOPICS_PAGE;
+  const to = from + TOPICS_PAGE - 1;
+
+  const { data: topics, count } = await supabase
     .from("forum_topics")
     .select(
-      "id, title, is_pinned, is_locked, created_at, updated_at, author_id, author:author_id(full_name), posts:forum_posts(count)"
+      "id, title, is_pinned, is_locked, created_at, updated_at, author_id, author:author_id(full_name), posts:forum_posts(count)",
+      { count: "exact" }
     )
     .eq("category_id", (category as any).id)
     .order("is_pinned", { ascending: false })
-    .order("updated_at", { ascending: false });
+    .order("updated_at", { ascending: false })
+    .range(from, to);
 
-  return { category: category as ForumCategory, topics: (topics ?? []) as any[] };
+  return {
+    category: category as ForumCategory,
+    topics: (topics ?? []) as any[],
+    total: count ?? 0,
+    page,
+    pageSize: TOPICS_PAGE,
+  };
 }
 
-export async function getForumTopic(id: string) {
+export async function getForumTopic(id: string, page = 1) {
   const supabase = createClient();
   const { data: topic } = await supabase
     .from("forum_topics")
     .select(
-      "id, title, is_pinned, is_locked, created_at, category:category_id(name, slug), author:author_id(full_name)"
+      "id, title, is_pinned, is_locked, created_at, author_id, category:category_id(name, slug), author:author_id(full_name)"
     )
     .eq("id", id)
     .maybeSingle();
   if (!topic) return null;
 
-  const { data: posts } = await supabase
-    .from("forum_posts")
-    .select("id, body, created_at, author_id, author:author_id(full_name)")
-    .eq("topic_id", id)
-    .order("created_at", { ascending: true });
+  const from = (page - 1) * POSTS_PAGE;
+  const to = from + POSTS_PAGE - 1;
 
-  return { topic: topic as any, posts: (posts ?? []) as any[] };
+  const { data: posts, count } = await supabase
+    .from("forum_posts")
+    .select("id, body, created_at, updated_at, author_id, author:author_id(full_name)", {
+      count: "exact",
+    })
+    .eq("topic_id", id)
+    .order("created_at", { ascending: true })
+    .range(from, to);
+
+  return {
+    topic: topic as any,
+    posts: (posts ?? []) as any[],
+    total: count ?? 0,
+    page,
+    pageSize: POSTS_PAGE,
+  };
 }
 
 export type CourseBadge = { role_context: string; course_title: string };
-
-export async function getUserCourseBadges(userId: string): Promise<CourseBadge[]> {
-  const supabase = createClient();
-  const { data } = await supabase.rpc("get_user_course_badges", { p_user: userId });
-  return (data ?? []) as CourseBadge[];
-}
 
 export type AuthorMeta = { full_name: string | null; role: string; badges: CourseBadge[] };
 

@@ -1,8 +1,16 @@
 import Link from "next/link";
 import { getForumTopic, getForumAuthorsMeta } from "@/lib/forum";
 import { getUserAndProfile } from "@/lib/auth";
-import { createPost } from "@/app/forum/actions";
+import {
+  createPost,
+  deleteTopic,
+  togglePin,
+  toggleLock,
+  updatePost,
+  deletePost,
+} from "@/app/forum/actions";
 import { AuthorBadges } from "@/components/author-badges";
+import { ForumPager } from "@/components/forum-pager";
 
 export const dynamic = "force-dynamic";
 
@@ -21,10 +29,11 @@ export default async function TopicoPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { erro?: string };
+  searchParams: { erro?: string; page?: string };
 }) {
-  const data = await getForumTopic(params.id);
-  const { user } = await getUserAndProfile();
+  const page = Math.max(1, Number(searchParams.page ?? 1) || 1);
+  const data = await getForumTopic(params.id, page);
+  const { user, profile } = await getUserAndProfile();
 
   if (!data) {
     return (
@@ -35,8 +44,13 @@ export default async function TopicoPage({
     );
   }
 
-  const { topic, posts } = data;
+  const { topic, posts, total, pageSize } = data;
   const meta = await getForumAuthorsMeta(posts.map((p: any) => p.author_id));
+  const isAdmin = profile?.role === "admin";
+  const isOwnerTopic = !!user && user.id === topic.author_id;
+
+  const btn =
+    "rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50";
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
@@ -50,13 +64,42 @@ export default async function TopicoPage({
         {topic.title}
       </h1>
 
+      {(isAdmin || isOwnerTopic) ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {isAdmin ? (
+            <>
+              <form action={togglePin}>
+                <input type="hidden" name="topic_id" value={topic.id} />
+                <input type="hidden" name="pinned" value={topic.is_pinned ? "1" : "0"} />
+                <button className={btn}>{topic.is_pinned ? "Desafixar" : "Fixar"}</button>
+              </form>
+              <form action={toggleLock}>
+                <input type="hidden" name="topic_id" value={topic.id} />
+                <input type="hidden" name="locked" value={topic.is_locked ? "1" : "0"} />
+                <button className={btn}>{topic.is_locked ? "Destrancar" : "Trancar"}</button>
+              </form>
+            </>
+          ) : null}
+          <form action={deleteTopic}>
+            <input type="hidden" name="topic_id" value={topic.id} />
+            <input type="hidden" name="slug" value={topic.category?.slug ?? ""} />
+            <button className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50">
+              Excluir tópico
+            </button>
+          </form>
+        </div>
+      ) : null}
+
       {searchParams.erro ? (
         <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{searchParams.erro}</p>
       ) : null}
 
       <div className="mt-6 space-y-4">
-        {posts.map((p: any) => {
+        {posts.map((p: any, idx: number) => {
           const am = meta.get(p.author_id);
+          const canEdit = (!!user && user.id === p.author_id) || isAdmin;
+          const isOpening = page === 1 && idx === 0;
+          const editado = p.updated_at && p.updated_at !== p.created_at;
           return (
             <div key={p.id} className="rounded-xl border border-slate-200 p-5">
               <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
@@ -64,13 +107,46 @@ export default async function TopicoPage({
                   <span className="font-medium text-slate-800">{am?.full_name ?? p.author?.full_name ?? "Usuário"}</span>
                   <AuthorBadges meta={am} />
                 </span>
-                <span className="text-xs text-slate-400">{dataHora(p.created_at)}</span>
+                <span className="text-xs text-slate-400">
+                  {dataHora(p.created_at)}{editado ? " · editado" : ""}
+                </span>
               </div>
               <p className="mt-3 whitespace-pre-line text-slate-700">{p.body}</p>
+
+              {canEdit ? (
+                <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-3">
+                  <details className="grow">
+                    <summary className="cursor-pointer text-xs font-medium text-brand">Editar</summary>
+                    <form action={updatePost} className="mt-2 space-y-2">
+                      <input type="hidden" name="post_id" value={p.id} />
+                      <input type="hidden" name="topic_id" value={topic.id} />
+                      <textarea
+                        name="body"
+                        required
+                        rows={4}
+                        defaultValue={p.body}
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand"
+                      />
+                      <button className="rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-dark">
+                        Salvar edição
+                      </button>
+                    </form>
+                  </details>
+                  {!isOpening ? (
+                    <form action={deletePost}>
+                      <input type="hidden" name="post_id" value={p.id} />
+                      <input type="hidden" name="topic_id" value={topic.id} />
+                      <button className="text-xs font-medium text-red-600 hover:underline">Excluir</button>
+                    </form>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           );
         })}
       </div>
+
+      <ForumPager basePath={`/forum/topico/${topic.id}`} page={page} total={total} pageSize={pageSize} />
 
       <div className="mt-8">
         {topic.is_locked ? (

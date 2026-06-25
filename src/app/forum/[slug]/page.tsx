@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getForumCategory, getForumAuthorsMeta } from "@/lib/forum";
 import { getUserAndProfile } from "@/lib/auth";
 import { AuthorBadges } from "@/components/author-badges";
+import { ForumPager } from "@/components/forum-pager";
 
 export const dynamic = "force-dynamic";
 
@@ -11,10 +12,13 @@ function dataCurta(iso: string) {
 
 export default async function ForumCategoryPage({
   params,
+  searchParams,
 }: {
   params: { slug: string };
+  searchParams: { page?: string };
 }) {
-  const data = await getForumCategory(params.slug);
+  const page = Math.max(1, Number(searchParams.page ?? 1) || 1);
+  const data = await getForumCategory(params.slug, page);
   const { user } = await getUserAndProfile();
 
   if (!data) {
@@ -26,7 +30,7 @@ export default async function ForumCategoryPage({
     );
   }
 
-  const { category, topics } = data;
+  const { category, topics, total, pageSize } = data;
   const meta = await getForumAuthorsMeta(topics.map((t: any) => t.author_id));
 
   return (
@@ -86,6 +90,8 @@ export default async function ForumCategoryPage({
           })
         )}
       </div>
+
+      <ForumPager basePath={`/forum/${category.slug}`} page={page} total={total} pageSize={pageSize} />
     </div>
   );
 }
