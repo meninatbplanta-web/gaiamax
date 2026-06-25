@@ -8,15 +8,33 @@ export default async function HomePage() {
 
   return (
     <div>
-      <section className="bg-brand-light">
-        <div className="mx-auto max-w-6xl px-4 py-20 text-center">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-brand">
+      <section className="relative flex min-h-[90vh] items-center justify-center overflow-hidden bg-brand-dark">
+        {/* Vídeo de fundo */}
+        <video
+          className="absolute inset-0 h-full w-full object-cover"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          aria-hidden="true"
+        >
+          <source
+            src="https://rota-livre.com/arquivos_comuns/CS19329_CO_Product_Anon_Home_Page_Video_Sizzle_en_US_1920x1080_V.mp4"
+            type="video/mp4"
+          />
+        </video>
+        {/* Escurecimento para legibilidade */}
+        <div className="absolute inset-0 bg-black/55" />
+
+        <div className="relative z-10 mx-auto max-w-3xl px-4 py-32 text-center text-white">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-white/80">
             Escola de Terapias Holísticas
           </p>
-          <h1 className="mx-auto max-w-3xl text-4xl font-bold leading-tight text-brand-dark sm:text-5xl">
+          <h1 className="mx-auto max-w-3xl text-4xl font-bold leading-tight sm:text-5xl">
             Forme-se como terapeuta holístico no seu ritmo
           </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg text-slate-600">
+          <p className="mx-auto mt-5 max-w-2xl text-lg text-white/90">
             Cursos em vídeo de mesa radiônica, limpeza energética, defesa psíquica
             e espiritualidade aplicada. Aprenda com instrutores experientes e
             acompanhe seu progresso.
@@ -25,7 +43,7 @@ export default async function HomePage() {
             <Link href="/cursos" className="rounded-lg bg-brand px-6 py-3 font-medium text-white transition hover:bg-brand-dark">
               Ver cursos
             </Link>
-            <Link href="/cadastro" className="rounded-lg border border-brand px-6 py-3 font-medium text-brand transition hover:bg-white">
+            <Link href="/cadastro" className="rounded-lg border border-white/70 bg-white/10 px-6 py-3 font-medium text-white backdrop-blur-sm transition hover:bg-white/20">
               Criar conta
             </Link>
           </div>

@@ -8,10 +8,12 @@ export function MobileNav({
   loggedIn,
   isAdmin,
   accountLabel,
+  dark = false,
 }: {
   loggedIn: boolean;
   isAdmin: boolean;
   accountLabel: string;
+  dark?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
@@ -25,7 +27,7 @@ export function MobileNav({
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Fechar menu" : "Abrir menu"}
         aria-expanded={open}
-        className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-700 hover:bg-slate-100"
+        className={`inline-flex h-10 w-10 items-center justify-center rounded-lg ${dark ? "text-white hover:bg-white/10" : "text-slate-700 hover:bg-slate-100"}`}
       >
         {open ? (
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
