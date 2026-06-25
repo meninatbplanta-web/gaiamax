@@ -15,6 +15,10 @@ export default async function AdminForumPage() {
       <h1 className="mt-2 text-2xl font-bold text-brand-dark">Áreas do fórum</h1>
       <p className="mt-1 text-sm text-slate-500">{categorias.length} área(s). Os usuários abrem tópicos dentro delas.</p>
 
+      <Link href="/admin/forum/denuncias" className="mt-3 inline-block rounded-lg border border-amber-300 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50">
+        Ver denúncias
+      </Link>
+
       <div className="mt-6 space-y-2">
         {categorias.map((c) => (
           <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3">

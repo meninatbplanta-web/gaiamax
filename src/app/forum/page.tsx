@@ -13,6 +13,18 @@ export default async function ForumHomePage() {
         Um espaço aberto para trocar experiências. Qualquer pessoa pode ler; para participar, basta ter uma conta.
       </p>
 
+      <form action="/forum/busca" method="get" className="mt-5 flex gap-2">
+        <input
+          name="q"
+          type="search"
+          placeholder="Buscar no fórum…"
+          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand"
+        />
+        <button className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark">
+          Buscar
+        </button>
+      </form>
+
       <div className="mt-6 space-y-3">
         {categorias.length === 0 ? (
           <p className="text-sm text-slate-400">Nenhuma área disponível ainda.</p>

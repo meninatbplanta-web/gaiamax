@@ -134,3 +134,21 @@ export async function deleteForumCategory(formData: FormData) {
   revalidatePath("/admin/forum");
   revalidatePath("/forum");
 }
+
+// ---------- Fórum: denúncias ----------
+export async function resolveReport(formData: FormData) {
+  await requireRole(["admin"]);
+  const id = String(formData.get("report_id"));
+  const supabase = createClient();
+  await supabase.from("forum_reports").update({ status: "resolvida" }).eq("id", id);
+  revalidatePath("/admin/forum/denuncias");
+}
+
+export async function deleteReportedPost(formData: FormData) {
+  await requireRole(["admin"]);
+  const postId = String(formData.get("post_id"));
+  const supabase = createClient();
+  // Excluir o post resolve a denúncia (cascade) e remove o conteúdo.
+  await supabase.from("forum_posts").delete().eq("id", postId);
+  revalidatePath("/admin/forum/denuncias");
+}

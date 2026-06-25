@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUserAndProfile } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 
 export async function createTopic(formData: FormData) {
   const supabase = createClient();
@@ -64,13 +65,43 @@ export async function createPost(formData: FormData) {
     redirect(`/forum/topico/${topicId}?erro=${encodeURIComponent(error.message)}`);
   }
 
+  // Notifica o autor do tópico por e-mail (best-effort), se for outra pessoa.
+  try {
+    const { data: topic } = await supabase
+      .from("forum_topics")
+      .select("title, author_id")
+      .eq("id", topicId)
+      .maybeSingle();
+    if (topic && (topic as any).author_id && (topic as any).author_id !== user.id) {
+      const { createAdminClient } = await import("@/lib/supabase/admin");
+      const { sendEmail, escapeHtml } = await import("@/lib/email");
+      const admin = createAdminClient();
+      const { data: au } = await admin.auth.admin.getUserById((topic as any).author_id);
+      const email = au?.user?.email;
+      if (email) {
+        const h = headers();
+        const host = h.get("host");
+        const proto = h.get("x-forwarded-proto") ?? "https";
+        const url = `${proto}://${host}/forum/topico/${topicId}`;
+        await sendEmail({
+          to: email,
+          subject: `Nova resposta em: ${(topic as any).title}`,
+          html:
+            `<p>Seu tópico "<strong>${escapeHtml((topic as any).title)}</strong>" recebeu uma nova resposta no fórum da GaiaMax.</p>` +
+            `<p><a href="${url}">Ver no fórum</a></p>`,
+        });
+      }
+    }
+  } catch {
+    // best-effort
+  }
+
   revalidatePath(`/forum/topico/${topicId}`);
   redirect(`/forum/topico/${topicId}`);
 }
 
 // ---------- Moderação e edição ----------
 
-// Excluir tópico (autor ou admin — garantido pela RLS).
 export async function deleteTopic(formData: FormData) {
   const supabase = createClient();
   const {
@@ -85,7 +116,6 @@ export async function deleteTopic(formData: FormData) {
   redirect(`/forum/${slug}`);
 }
 
-// Fixar/desafixar (somente admin).
 export async function togglePin(formData: FormData) {
   const { profile } = await getUserAndProfile();
   const topicId = String(formData.get("topic_id"));
@@ -98,7 +128,6 @@ export async function togglePin(formData: FormData) {
   redirect(`/forum/topico/${topicId}`);
 }
 
-// Trancar/destrancar (somente admin).
 export async function toggleLock(formData: FormData) {
   const { profile } = await getUserAndProfile();
   const topicId = String(formData.get("topic_id"));
@@ -111,7 +140,6 @@ export async function toggleLock(formData: FormData) {
   redirect(`/forum/topico/${topicId}`);
 }
 
-// Editar um post (autor ou admin — garantido pela RLS).
 export async function updatePost(formData: FormData) {
   const supabase = createClient();
   const {
@@ -133,7 +161,6 @@ export async function updatePost(formData: FormData) {
   redirect(`/forum/topico/${topicId}`);
 }
 
-// Excluir um post (autor ou admin — garantido pela RLS).
 export async function deletePost(formData: FormData) {
   const supabase = createClient();
   const {
@@ -146,4 +173,52 @@ export async function deletePost(formData: FormData) {
   await supabase.from("forum_posts").delete().eq("id", postId);
   revalidatePath(`/forum/topico/${topicId}`);
   redirect(`/forum/topico/${topicId}`);
+}
+
+// ---------- Curtidas ----------
+export async function toggleReaction(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const postId = String(formData.get("post_id"));
+  const topicId = String(formData.get("topic_id"));
+
+  const { data: existing } = await supabase
+    .from("forum_reactions")
+    .select("id")
+    .eq("post_id", postId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase.from("forum_reactions").delete().eq("id", (existing as any).id);
+  } else {
+    await supabase.from("forum_reactions").insert({ post_id: postId, user_id: user.id });
+  }
+  revalidatePath(`/forum/topico/${topicId}`);
+  redirect(`/forum/topico/${topicId}`);
+}
+
+// ---------- Denúncia ----------
+export async function reportPost(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const postId = String(formData.get("post_id"));
+  const topicId = String(formData.get("topic_id"));
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  await supabase.from("forum_reports").insert({
+    post_id: postId,
+    reporter_id: user.id,
+    reason,
+  });
+  revalidatePath(`/forum/topico/${topicId}`);
+  redirect(`/forum/topico/${topicId}?denunciado=1`);
 }

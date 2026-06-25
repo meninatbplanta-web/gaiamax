@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getForumTopic, getForumAuthorsMeta } from "@/lib/forum";
+import { getForumTopic, getForumAuthorsMeta, getReactionsForPosts } from "@/lib/forum";
 import { getUserAndProfile } from "@/lib/auth";
 import {
   createPost,
@@ -8,6 +8,8 @@ import {
   toggleLock,
   updatePost,
   deletePost,
+  toggleReaction,
+  reportPost,
 } from "@/app/forum/actions";
 import { AuthorBadges } from "@/components/author-badges";
 import { ForumPager } from "@/components/forum-pager";
@@ -29,7 +31,7 @@ export default async function TopicoPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { erro?: string; page?: string };
+  searchParams: { erro?: string; page?: string; denunciado?: string };
 }) {
   const page = Math.max(1, Number(searchParams.page ?? 1) || 1);
   const data = await getForumTopic(params.id, page);
@@ -46,6 +48,7 @@ export default async function TopicoPage({
 
   const { topic, posts, total, pageSize } = data;
   const meta = await getForumAuthorsMeta(posts.map((p: any) => p.author_id));
+  const reactions = await getReactionsForPosts(posts.map((p: any) => p.id), user?.id);
   const isAdmin = profile?.role === "admin";
   const isOwnerTopic = !!user && user.id === topic.author_id;
 
@@ -90,6 +93,11 @@ export default async function TopicoPage({
         </div>
       ) : null}
 
+      {searchParams.denunciado ? (
+        <p className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
+          Denúncia enviada. Nossa equipe vai analisar. Obrigado!
+        </p>
+      ) : null}
       {searchParams.erro ? (
         <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{searchParams.erro}</p>
       ) : null}
@@ -100,6 +108,7 @@ export default async function TopicoPage({
           const canEdit = (!!user && user.id === p.author_id) || isAdmin;
           const isOpening = page === 1 && idx === 0;
           const editado = p.updated_at && p.updated_at !== p.created_at;
+          const rx = reactions.get(p.id) ?? { count: 0, mine: false };
           return (
             <div key={p.id} className="rounded-xl border border-slate-200 p-5">
               <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
@@ -113,10 +122,29 @@ export default async function TopicoPage({
               </div>
               <p className="mt-3 whitespace-pre-line text-slate-700">{p.body}</p>
 
-              {canEdit ? (
-                <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-3">
-                  <details className="grow">
-                    <summary className="cursor-pointer text-xs font-medium text-brand">Editar</summary>
+              <div className="mt-3 flex flex-wrap items-center gap-4 border-t border-slate-100 pt-3 text-xs">
+                {/* Curtir */}
+                {user ? (
+                  <form action={toggleReaction}>
+                    <input type="hidden" name="post_id" value={p.id} />
+                    <input type="hidden" name="topic_id" value={topic.id} />
+                    <button
+                      className={
+                        rx.mine
+                          ? "rounded-full bg-brand px-3 py-1 font-medium text-white"
+                          : "rounded-full border border-slate-300 px-3 py-1 font-medium text-slate-600 hover:bg-slate-50"
+                      }
+                    >
+                      ♥ Curtir{rx.count > 0 ? ` · ${rx.count}` : ""}
+                    </button>
+                  </form>
+                ) : (
+                  <span className="text-slate-400">♥ {rx.count}</span>
+                )}
+
+                {canEdit ? (
+                  <details>
+                    <summary className="cursor-pointer font-medium text-brand">Editar</summary>
                     <form action={updatePost} className="mt-2 space-y-2">
                       <input type="hidden" name="post_id" value={p.id} />
                       <input type="hidden" name="topic_id" value={topic.id} />
@@ -132,15 +160,36 @@ export default async function TopicoPage({
                       </button>
                     </form>
                   </details>
-                  {!isOpening ? (
-                    <form action={deletePost}>
+                ) : null}
+
+                {canEdit && !isOpening ? (
+                  <form action={deletePost}>
+                    <input type="hidden" name="post_id" value={p.id} />
+                    <input type="hidden" name="topic_id" value={topic.id} />
+                    <button className="font-medium text-red-600 hover:underline">Excluir</button>
+                  </form>
+                ) : null}
+
+                {/* Denunciar (qualquer usuário logado que não seja o autor) */}
+                {user && user.id !== p.author_id ? (
+                  <details>
+                    <summary className="cursor-pointer text-slate-400 hover:text-slate-600">Denunciar</summary>
+                    <form action={reportPost} className="mt-2 space-y-2">
                       <input type="hidden" name="post_id" value={p.id} />
                       <input type="hidden" name="topic_id" value={topic.id} />
-                      <button className="text-xs font-medium text-red-600 hover:underline">Excluir</button>
+                      <input
+                        name="reason"
+                        type="text"
+                        placeholder="Motivo (opcional)"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand"
+                      />
+                      <button className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50">
+                        Enviar denúncia
+                      </button>
                     </form>
-                  ) : null}
-                </div>
-              ) : null}
+                  </details>
+                ) : null}
+              </div>
             </div>
           );
         })}

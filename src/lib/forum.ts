@@ -110,3 +110,71 @@ export async function getForumAuthorsMeta(userIds: string[]): Promise<Map<string
   }
   return map;
 }
+
+// ---------- Busca ----------
+export async function searchForum(q: string) {
+  const term = (q ?? "").trim();
+  if (!term) return [];
+  const supabase = createClient();
+  const like = `%${term}%`;
+
+  const { data: byTitle } = await supabase
+    .from("forum_topics")
+    .select("id, title, updated_at, author_id, category:category_id(name, slug)")
+    .ilike("title", like)
+    .limit(30);
+
+  const { data: byBody } = await supabase
+    .from("forum_posts")
+    .select("topic_id")
+    .ilike("body", like)
+    .limit(60);
+
+  const topicIds = Array.from(new Set((byBody ?? []).map((p: any) => p.topic_id)));
+  let byBodyTopics: any[] = [];
+  if (topicIds.length) {
+    const { data } = await supabase
+      .from("forum_topics")
+      .select("id, title, updated_at, author_id, category:category_id(name, slug)")
+      .in("id", topicIds)
+      .limit(30);
+    byBodyTopics = data ?? [];
+  }
+
+  const map = new Map<string, any>();
+  for (const t of [...(byTitle ?? []), ...byBodyTopics]) map.set(t.id, t);
+  return Array.from(map.values());
+}
+
+// ---------- Curtidas ----------
+export async function getReactionsForPosts(postIds: string[], userId?: string) {
+  const map = new Map<string, { count: number; mine: boolean }>();
+  const ids = Array.from(new Set(postIds.filter(Boolean)));
+  if (ids.length === 0) return map;
+
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("forum_reactions")
+    .select("post_id, user_id")
+    .in("post_id", ids);
+
+  for (const id of ids) map.set(id, { count: 0, mine: false });
+  for (const r of (data ?? []) as any[]) {
+    const m = map.get(r.post_id) ?? { count: 0, mine: false };
+    m.count += 1;
+    if (userId && r.user_id === userId) m.mine = true;
+    map.set(r.post_id, m);
+  }
+  return map;
+}
+
+// ---------- Denúncias (admin) ----------
+export async function getOpenForumReports() {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("forum_reports")
+    .select("id, reason, status, created_at, post:post_id(id, body, topic_id, author_id)")
+    .eq("status", "aberta")
+    .order("created_at", { ascending: false });
+  return (data ?? []) as any[];
+}
