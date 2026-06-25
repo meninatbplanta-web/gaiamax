@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export default async function ContaPage({
   searchParams,
 }: {
-  searchParams: { perfil?: string; senha?: string; email_pendente?: string; erro?: string };
+  searchParams: { perfil?: string; senha?: string; senha_erro?: string; email_pendente?: string; erro?: string };
 }) {
   const { user, profile } = await requireUser();
   const papel = profile?.role ?? "aluno";
@@ -32,11 +32,6 @@ export default async function ContaPage({
           {searchParams.email_pendente
             ? " Enviamos um link de confirmação para o novo e-mail — o e-mail só muda após você confirmar."
             : ""}
-        </p>
-      ) : null}
-      {searchParams.senha ? (
-        <p className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
-          Senha alterada com sucesso.
         </p>
       ) : null}
 
@@ -105,6 +100,17 @@ export default async function ContaPage({
           </button>
         </form>
       </div>
+
+      {searchParams.senha ? (
+        <p className="mt-3 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
+          Senha alterada com sucesso.
+        </p>
+      ) : null}
+      {searchParams.senha_erro ? (
+        <p className="mt-3 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+          {searchParams.senha_erro}
+        </p>
+      ) : null}
 
       <div className="mt-6 flex flex-wrap gap-3">
         <Link

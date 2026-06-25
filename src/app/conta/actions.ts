@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { traduzErroAuth } from "@/lib/erros";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
@@ -34,16 +35,14 @@ export async function updateProfile(formData: FormData) {
     redirect(`/conta?erro=${encodeURIComponent("Informe seu nome.")}`);
   }
 
-  // Atualiza o nome no perfil e nos metadados de auth.
   await supabase.from("profiles").update({ full_name: fullName }).eq("id", user.id);
   await supabase.auth.updateUser({ data: { full_name: fullName } });
 
-  // Troca de e-mail (envia confirmação ao novo endereço, se mudou).
   let emailPendente = false;
   if (email && email.toLowerCase() !== (user.email ?? "").toLowerCase()) {
     const { error } = await supabase.auth.updateUser({ email });
     if (error) {
-      redirect(`/conta?erro=${encodeURIComponent(error.message)}`);
+      redirect(`/conta?erro=${encodeURIComponent(traduzErroAuth(error.message))}`);
     }
     emailPendente = true;
   }
@@ -64,15 +63,15 @@ export async function changePassword(formData: FormData) {
   const confirma = String(formData.get("confirm") ?? "");
 
   if (senha.length < 6) {
-    redirect(`/conta?erro=${encodeURIComponent("A senha deve ter ao menos 6 caracteres.")}`);
+    redirect(`/conta?senha_erro=${encodeURIComponent("A senha deve ter ao menos 6 caracteres.")}`);
   }
   if (senha !== confirma) {
-    redirect(`/conta?erro=${encodeURIComponent("As senhas não coincidem.")}`);
+    redirect(`/conta?senha_erro=${encodeURIComponent("As senhas não coincidem.")}`);
   }
 
   const { error } = await supabase.auth.updateUser({ password: senha });
   if (error) {
-    redirect(`/conta?erro=${encodeURIComponent(error.message)}`);
+    redirect(`/conta?senha_erro=${encodeURIComponent(traduzErroAuth(error.message))}`);
   }
 
   // Limpa a marcação de "trocar senha obrigatória", caso exista.

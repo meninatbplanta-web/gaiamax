@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { traduzErroAuth } from "@/lib/erros";
 
 function originUrl() {
   const h = headers();
@@ -42,7 +43,7 @@ export async function signIn(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    redirect(`/login?erro=${encodeURIComponent(error.message)}`);
+    redirect(`/login?erro=${encodeURIComponent(traduzErroAuth(error.message))}`);
   }
   redirect("/conta");
 }
@@ -81,7 +82,7 @@ export async function updatePassword(formData: FormData) {
 
   const { error } = await supabase.auth.updateUser({ password });
   if (error) {
-    redirect(`/redefinir-senha?erro=${encodeURIComponent(error.message)}`);
+    redirect(`/redefinir-senha?erro=${encodeURIComponent(traduzErroAuth(error.message))}`);
   }
 
   // Remove a marcação de troca obrigatória (caso a senha tenha sido resetada pelo admin).
