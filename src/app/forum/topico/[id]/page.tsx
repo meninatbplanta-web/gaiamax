@@ -97,11 +97,6 @@ export default async function TopicoPage({
         </div>
       ) : null}
 
-      {searchParams.denunciado ? (
-        <p className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
-          Denúncia enviada. Nossa equipe vai analisar. Obrigado!
-        </p>
-      ) : null}
       {searchParams.erro ? (
         <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{searchParams.erro}</p>
       ) : null}
@@ -199,6 +194,10 @@ export default async function TopicoPage({
                       </button>
                     </form>
                   </details>
+                ) : null}
+
+                {searchParams.denunciado === p.id ? (
+                  <span className="font-medium text-green-700">Denúncia enviada. Obrigado!</span>
                 ) : null}
 
                 {lockedForOwner ? (

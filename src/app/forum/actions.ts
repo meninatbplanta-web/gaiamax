@@ -269,5 +269,5 @@ export async function reportPost(formData: FormData) {
     reason,
   });
   revalidatePath(`/forum/topico/${topicId}`);
-  redirect(`/forum/topico/${topicId}?denunciado=1`);
+  redirect(`/forum/topico/${topicId}?denunciado=${postId}`);
 }
