@@ -35,7 +35,8 @@ export default async function AdminPage() {
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
         <NavLink href="/admin/usuarios" title="Usuários e papéis" desc="Promover instrutores e administradores." />
-        <NavLink href="/admin/cursos" title="Cursos" desc="Publicar/despublicar e mapear produtos Eduzz/Lia." />
+        <NavLink href="/instrutor" title="Criar / editar cursos" desc="Painel do instrutor: capa, módulos, aulas, materiais e vídeos." />
+        <NavLink href="/admin/cursos" title="Cursos (publicação)" desc="Publicar/despublicar e mapear produtos Eduzz/Lia." />
         <NavLink href="/admin/matriculas" title="Matrículas" desc="Conceder e revogar acesso; ver pagamentos." />
         <NavLink href="/suporte" title="Suporte" desc="Moderar e responder as dúvidas dos alunos." />
         <NavLink href="/admin/forum" title="Fórum" desc="Criar e organizar as áreas/categorias do fórum." />
